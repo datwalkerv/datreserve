@@ -1,19 +1,62 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const defaultHours = DAYS.map((_, i) => ({
+const DEFAULT_HOURS = DAYS.map((_, i) => ({
   weekday: i, isOpen: i >= 1 && i <= 5, startTime: '09:00', endTime: '18:00', slotIntervalMinutes: 30,
 }));
 
 export default function WorkingTimePage() {
-  const [hours, setHours] = useState(defaultHours);
+  const [hours, setHours] = useState(DEFAULT_HOURS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('me/working-hours').json<typeof DEFAULT_HOURS>()
+      .then(data => {
+        if (data && data.length > 0) {
+          setHours(DEFAULT_HOURS.map(d => {
+            const saved = data.find(s => s.weekday === d.weekday);
+            return saved ? { ...d, ...saved } : d;
+          }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   function toggle(idx: number) {
     setHours(h => h.map((d, i) => i === idx ? { ...d, isOpen: !d.isOpen } : d));
+    setSaved(false);
   }
+
   function setField(idx: number, key: string, val: string | number) {
     setHours(h => h.map((d, i) => i === idx ? { ...d, [key]: val } : d));
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError('');
+    try {
+      await api.put('me/working-hours', { json: hours });
+      setSaved(true);
+    } catch {
+      setError('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="h-6 w-40 animate-pulse rounded bg-surface-2" />
+      </div>
+    );
   }
 
   return (
@@ -52,8 +95,11 @@ export default function WorkingTimePage() {
         ))}
       </div>
 
-      <button className="mt-6 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-black hover:bg-accent-hover">
-        Save
+      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+      <button onClick={handleSave} disabled={saving}
+        className="mt-6 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-black hover:bg-accent-hover disabled:opacity-60">
+        {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
       </button>
     </div>
   );

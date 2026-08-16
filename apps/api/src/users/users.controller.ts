@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Put, Body, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 
 @Controller()
@@ -42,5 +42,12 @@ export class UsersController {
     const userId = req.user?.id;
     if (!userId) return [];
     return this.usersService.getWorkingHours(userId);
+  }
+
+  @Put('me/working-hours')
+  async updateWorkingHours(@Req() req: any, @Body() body: any[]) {
+    const userId = req.user?.id;
+    if (!userId) return [];
+    return this.usersService.upsertWorkingHours(userId, body);
   }
 }
