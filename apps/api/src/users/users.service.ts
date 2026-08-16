@@ -45,7 +45,7 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
-    const allowed = ['firstName','lastName','companyName','phoneNumber','description','currency','locationText','hasLocation','socials'];
+    const allowed = ['firstName','lastName','companyName','phoneNumber','description','currency','locationText','hasLocation','socials','theme'];
     const update: Partial<UserProfile> = {};
     for (const key of allowed) {
       if (key in data) (update as any)[key] = (data as any)[key];

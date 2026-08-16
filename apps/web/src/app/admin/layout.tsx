@@ -34,11 +34,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { data: session } = useSession();
   const [settingsOpen, setSettingsOpen] = useState(pathname.startsWith('/admin/settings'));
-  const [profile, setProfile] = useState<{ slug?: string; avatarUrl?: string } | null>(null);
+  const [profile, setProfile] = useState<{ slug?: string; avatarUrl?: string; theme?: string } | null>(null);
 
   useEffect(() => {
-    api.get('me').json<{ slug?: string; avatarUrl?: string }>()
-      .then(setProfile)
+    api.get('me').json<{ slug?: string; avatarUrl?: string; theme?: string }>()
+      .then(data => {
+        setProfile(data);
+        if (data?.theme) document.documentElement.setAttribute('data-theme', data.theme);
+      })
       .catch(() => {});
   }, []);
 
