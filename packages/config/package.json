@@ -1,0 +1,8 @@
+{
+  "name": "@datreserve/config",
+  "version": "0.0.1",
+  "main": "./index.js",
+  "scripts": {
+    "lint": "echo 'no lint'"
+  }
+}
