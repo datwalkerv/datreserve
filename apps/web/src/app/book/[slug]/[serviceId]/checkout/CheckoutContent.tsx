@@ -26,8 +26,9 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
     setForm(f => ({ ...f, [key]: val }));
   }
 
-  function buildIcs(appt: any, start: Date, end: Date) {
+  function buildIcs(appt: any, start: Date, end: Date, serviceName: string, clientName: string) {
     const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const summary = `${serviceName} - ${clientName}`;
     return [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -35,7 +36,7 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
       `UID:${appt.icsUid || appt.id}@datreserve`,
       `DTSTART:${fmt(start)}`,
       `DTEND:${fmt(end)}`,
-      'SUMMARY:Appointment',
+      `SUMMARY:${summary}`,
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n');
@@ -45,21 +46,27 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${apiBase}/public/${params.slug}/book`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceId: params.serviceId,
-          startAt,
-          clientName: form.name,
-          clientEmail: form.email,
-          clientPhone: form.phone,
-          clientNotes: form.notes,
+      const [profileRes, bookingRes] = await Promise.all([
+        fetch(`${apiBase}/public/${params.slug}`),
+        fetch(`${apiBase}/public/${params.slug}/book`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            serviceId: params.serviceId,
+            startAt,
+            clientName: form.name,
+            clientEmail: form.email,
+            clientPhone: form.phone,
+            clientNotes: form.notes,
+          }),
         }),
-      });
-      if (!res.ok) throw new Error('Booking failed');
-      const appt = await res.json();
-      const ics = buildIcs(appt, startDate!, new Date(endAt));
+      ]);
+      if (!bookingRes.ok) throw new Error('Booking failed');
+      const appt = await bookingRes.json();
+      const profileData = profileRes.ok ? await profileRes.json() : null;
+      const service = profileData?.services?.find((s: any) => s.id === params.serviceId);
+      const serviceName = service?.name || 'Appointment';
+      const ics = buildIcs(appt, startDate!, new Date(endAt), serviceName, form.name);
       const blob = new Blob([ics], { type: 'text/calendar' });
       setIcsUrl(URL.createObjectURL(blob));
       setStep('confirmed');
