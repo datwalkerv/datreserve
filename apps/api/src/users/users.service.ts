@@ -39,6 +39,16 @@ export class UsersService {
     return this.hoursRepo.find({ where: { userId } });
   }
 
+  async updateProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
+    const allowed = ['firstName','lastName','companyName','phoneNumber','description','currency','locationText','hasLocation','socials'];
+    const update: Partial<UserProfile> = {};
+    for (const key of allowed) {
+      if (key in data) (update as any)[key] = (data as any)[key];
+    }
+    await this.profileRepo.update({ userId }, update);
+    return this.findByUserId(userId);
+  }
+
   async upsertWorkingHours(userId: string, hours: Partial<WorkingHours>[]): Promise<WorkingHours[]> {
     await this.hoursRepo.delete({ userId });
     const entities = hours.map(h => this.hoursRepo.create({ ...h, userId }));

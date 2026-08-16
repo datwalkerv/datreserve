@@ -2,7 +2,7 @@ import {
   Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
   UpdateDateColumn, Index
 } from 'typeorm';
-import { Niche, Theme } from '@datreserve/shared-types';
+import { Theme } from '@datreserve/shared-types';
 
 @Entity('user_profiles')
 export class UserProfile {
@@ -44,8 +44,8 @@ export class UserProfile {
   @Column({ nullable: true })
   coverImageUrl: string;
 
-  @Column({ type: 'enum', enum: Niche, nullable: true })
-  niche: Niche;
+  @Column({ nullable: true })
+  niche: string;
 
   @Column({ default: false })
   hasLocation: boolean;

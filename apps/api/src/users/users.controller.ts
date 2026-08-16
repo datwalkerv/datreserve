@@ -31,4 +31,9 @@ export class UsersController {
   async stage4(@Req() req: any, @Body() body: any) {
     return this.usersService.updateOnboardingStage(req.user?.id, 4, body);
   }
+
+  @Patch('settings/profile')
+  async updateProfile(@Req() req: any, @Body() body: any) {
+    return this.usersService.updateProfile(req.user?.id, body);
+  }
 }

@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthMiddleware } from './auth/auth.middleware';
 import { UserProfile } from './entities/user-profile.entity';
 import { WorkingHours } from './entities/working-hours.entity';
 import { Service } from './entities/service.entity';
@@ -10,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { ServicesModule } from './services/services.module';
 import { ClientsModule } from './clients/clients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -29,6 +31,12 @@ import { AppointmentsModule } from './appointments/appointments.module';
     ServicesModule,
     ClientsModule,
     AppointmentsModule,
+    UploadsModule,
   ],
+  providers: [AuthMiddleware],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes('*');
+  }
+}

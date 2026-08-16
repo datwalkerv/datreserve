@@ -2,18 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signOut, useSession } from '@/lib/auth-client';
+import { api } from '@/lib/api';
 import {
   Calendar, Settings, Scissors, Users, ChevronDown, ChevronRight,
   ExternalLink, LogOut, User, Clock, Paintbrush, SlidersHorizontal,
 } from 'lucide-react';
 
 const SETTINGS_CHILDREN = [
-  { href: '/admin/settings/profile', label: 'Profile', icon: User },
-  { href: '/admin/settings/display', label: 'Display', icon: Paintbrush },
-  { href: '/admin/settings/working-time', label: 'Working time', icon: Clock },
-  { href: '/admin/settings/rules', label: 'Rules', icon: SlidersHorizontal },
+  { href: '/admin/settings/profile',      label: 'Profile',       icon: User             },
+  { href: '/admin/settings/display',      label: 'Display',       icon: Paintbrush       },
+  { href: '/admin/settings/working-time', label: 'Working time',  icon: Clock            },
+  { href: '/admin/settings/rules',        label: 'Rules',         icon: SlidersHorizontal },
 ];
 
 function NavItem({ href, icon: Icon, label, active }: { href: string; icon: React.ElementType; label: string; active: boolean }) {
@@ -33,11 +34,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { data: session } = useSession();
   const [settingsOpen, setSettingsOpen] = useState(pathname.startsWith('/admin/settings'));
+  const [profile, setProfile] = useState<{ slug?: string; avatarUrl?: string } | null>(null);
+
+  useEffect(() => {
+    api.get('me').json<{ slug?: string; avatarUrl?: string }>()
+      .then(setProfile)
+      .catch(() => {});
+  }, []);
 
   async function handleLogout() {
     await signOut();
     router.push('/login');
   }
+
+  const reservationUrl = profile?.slug ? `/book/${profile.slug}` : null;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -52,11 +62,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <div className="px-3 pb-4">
-          <a href="#" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/20">
-            <ExternalLink size={12} />
-            Your reservation page
-          </a>
+          {reservationUrl ? (
+            <Link href={reservationUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10">
+              <ExternalLink size={14} />
+              Your reservation page
+            </Link>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-text-muted">
+              <ExternalLink size={14} />
+              Your reservation page
+            </div>
+          )}
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3">
@@ -81,13 +98,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <NavItem href="/admin/services" icon={Scissors} label="Services" active={pathname.startsWith('/admin/services')} />
-          <NavItem href="/admin/clients" icon={Users} label="Clients" active={pathname.startsWith('/admin/clients')} />
+          <NavItem href="/admin/clients"  icon={Users}    label="Clients"  active={pathname.startsWith('/admin/clients')}  />
         </nav>
 
         <div className="border-t border-border p-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs text-text-secondary">
-              {session?.user?.name?.[0]?.toUpperCase() ?? '?'}
+            <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-2">
+              {profile?.avatarUrl
+                ? <img src={profile.avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+                : <div className="flex h-full w-full items-center justify-center text-xs text-text-secondary">
+                    {session?.user?.name?.[0]?.toUpperCase() ?? '?'}
+                  </div>
+              }
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-text-primary">{session?.user?.name ?? 'User'}</p>
