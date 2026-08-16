@@ -19,13 +19,15 @@
     "rxjs": "^7.8.0",
     "class-validator": "^0.14.0",
     "class-transformer": "^0.5.0",
-    "@datreserve/shared-types": "workspace:*"
+    "@datreserve/shared-types": "workspace:*",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@types/express": "^4.17.0",
     "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
     "typescript": "^5.0.0"
   }
 }
