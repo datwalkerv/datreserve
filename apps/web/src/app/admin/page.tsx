@@ -190,7 +190,7 @@ export default function AdminPage() {
               {/* Working hours bracket (if open) */}
               {isOpen && (
                 <div
-                  className="pointer-events-none absolute left-0 right-0 border-l-2 border-accent/50"
+                  className="pointer-events-none absolute left-0 right-0"
                   style={{
                     top: ((startMin / 60 - HOUR_START) * ROW_HEIGHT),
                     height: ((endMin - startMin) / 60 * ROW_HEIGHT),

@@ -23,7 +23,12 @@ export class UsersService {
 
   async createProfile(userId: string): Promise<UserProfile> {
     const profile = this.profileRepo.create({ userId, onboardingStage: 0 });
-    return this.profileRepo.save(profile);
+    await this.profileRepo.save(profile);
+    const defaultHours = [1, 2, 3, 4, 5].map(weekday =>
+      this.hoursRepo.create({ userId, weekday, isOpen: true, startTime: '09:00', endTime: '15:00', slotIntervalMinutes: 30 }),
+    );
+    await this.hoursRepo.save(defaultHours);
+    return profile;
   }
 
   async updateOnboardingStage(userId: string, stage: number, data: Partial<UserProfile>): Promise<UserProfile> {
