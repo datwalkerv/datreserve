@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { CheckCircle, Download } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { CheckCircle, Download, X } from 'lucide-react';
 
 export default function CheckoutContent({ params }: { params: { slug: string; serviceId: string } }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const startAt = searchParams.get('startAt') || '';
   const endAt = searchParams.get('endAt') || '';
@@ -79,7 +80,13 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
 
   if (step === 'confirmed') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4">
+        <button
+          onClick={() => router.push(`/book/${params.slug}`)}
+          className="absolute right-4 top-4 rounded-lg p-2 text-text-muted hover:bg-surface hover:text-text-primary"
+        >
+          <X size={20} />
+        </button>
         <div className="w-full max-w-sm text-center">
           <div className="mb-4 flex justify-center">
             <CheckCircle size={48} className="text-accent" />

@@ -208,7 +208,7 @@ export default function AdminPage() {
                 return (
                   <div
                     key={appt.id}
-                    className="absolute left-1 right-1 overflow-hidden rounded-md border border-accent/40 px-2 py-1 text-xs"
+                    className="absolute left-1 right-1 overflow-hidden rounded-md px-2 py-1 text-xs"
                     style={{ top, height, background: 'color-mix(in srgb, var(--color-accent) 18%, var(--color-surface-2))' }}
                   >
                     <div className="mb-0.5 h-0.5 w-6 rounded-full bg-accent opacity-90" />

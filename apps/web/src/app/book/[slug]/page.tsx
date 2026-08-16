@@ -48,13 +48,26 @@ export default async function BookingProfilePage({ params }: { params: { slug: s
           {profile.companyName && <p className="mt-0.5 text-sm text-text-secondary">{profile.companyName}</p>}
           {profile.description && <p className="mt-3 text-sm leading-relaxed text-text-secondary">{profile.description}</p>}
 
-          {profile.socials && (
-            <div className="mt-3 flex gap-3">
+          {profile.socials && (profile.socials.instagram || profile.socials.website) && (
+            <div className="mt-3 flex gap-2">
               {profile.socials.instagram && (
-                <a href={`https://instagram.com/${profile.socials.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-xs text-text-muted hover:text-accent">Instagram</a>
+                <a href={`https://instagram.com/${profile.socials.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:border-accent hover:text-accent">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <circle cx="12" cy="12" r="4"/>
+                    <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+                  </svg>
+                </a>
               )}
               {profile.socials.website && (
-                <a href={profile.socials.website} target="_blank" rel="noopener noreferrer" className="text-xs text-text-muted hover:text-accent">Website</a>
+                <a href={profile.socials.website} target="_blank" rel="noopener noreferrer"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:border-accent hover:text-accent">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </a>
               )}
             </div>
           )}
