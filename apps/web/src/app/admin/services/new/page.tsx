@@ -16,9 +16,20 @@ export default function NewServicePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const COUNTRY_CURRENCY: Record<string, string> = {
+    US: 'USD', GB: 'GBP', DE: 'EUR', FR: 'EUR', HU: 'HUF', RO: 'RON',
+    PL: 'PLN', IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR', AT: 'EUR',
+    CH: 'CHF', SE: 'SEK', NO: 'NOK', DK: 'DKK', FI: 'EUR', PT: 'EUR',
+    GR: 'EUR', CZ: 'CZK', SK: 'EUR', HR: 'EUR', RS: 'RSD', UA: 'UAH',
+    TR: 'TRY', CA: 'CAD', AU: 'AUD', NZ: 'NZD', AE: 'AED', SG: 'SGD',
+  };
+
   useEffect(() => {
-    api.get('me').json<{ currency?: string }>()
-      .then(data => { if (data?.currency) setCurrency(data.currency); })
+    api.get('me').json<{ currency?: string; country?: string }>()
+      .then(data => {
+        const c = data?.currency || (data?.country ? COUNTRY_CURRENCY[data.country] : '');
+        if (c) setCurrency(c);
+      })
       .catch(() => {});
   }, []);
 

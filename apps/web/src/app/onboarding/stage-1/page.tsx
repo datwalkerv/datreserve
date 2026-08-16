@@ -32,6 +32,14 @@ const ICONS: { key: string; label: string; icon: React.ElementType }[] = [
   { key: 'HeartPulse',    label: 'Wellness',           icon: HeartPulse    },
 ];
 
+const COUNTRY_CURRENCY: Record<string, string> = {
+  US: 'USD', GB: 'GBP', DE: 'EUR', FR: 'EUR', HU: 'HUF', RO: 'RON',
+  PL: 'PLN', IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR', AT: 'EUR',
+  CH: 'CHF', SE: 'SEK', NO: 'NOK', DK: 'DKK', FI: 'EUR', PT: 'EUR',
+  GR: 'EUR', CZ: 'CZK', SK: 'EUR', HR: 'EUR', RS: 'RSD', UA: 'UAH',
+  TR: 'TRY', CA: 'CAD', AU: 'AUD', NZ: 'NZD', AE: 'AED', SG: 'SGD',
+};
+
 const COUNTRIES: { code: string; name: string; prefix: string }[] = [
   { code: 'US', name: 'United States',   prefix: '+1'   },
   { code: 'GB', name: 'United Kingdom',  prefix: '+44'  },
@@ -98,6 +106,7 @@ export default function OnboardingStage1() {
           companyName: form.companyName,
           slug: form.slug,
           country: form.country,
+          currency: COUNTRY_CURRENCY[form.country] ?? '',
           phoneNumber,
           niche: form.niche,
         },
