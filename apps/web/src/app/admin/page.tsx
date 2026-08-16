@@ -208,10 +208,16 @@ export default function AdminPage() {
                 return (
                   <div
                     key={appt.id}
-                    className="absolute left-1 right-1 overflow-hidden rounded-md bg-accent/20 px-2 py-1 text-xs text-accent"
-                    style={{ top, height }}
+                    className="absolute left-1 right-1 overflow-hidden rounded-md border border-accent/40 px-2 py-1 text-xs"
+                    style={{ top, height, background: 'color-mix(in srgb, var(--color-accent) 18%, var(--color-surface-2))' }}
                   >
-                    <p className="truncate font-medium">{appt.clientName}</p>
+                    <div className="mb-0.5 h-0.5 w-6 rounded-full bg-accent opacity-90" />
+                    <p className="truncate font-semibold text-accent">{appt.clientName}</p>
+                    {height >= 40 && (
+                      <p className="truncate text-accent/70">
+                        {new Date(appt.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
                   </div>
                 );
               })}
