@@ -36,4 +36,11 @@ export class UsersController {
   async updateProfile(@Req() req: any, @Body() body: any) {
     return this.usersService.updateProfile(req.user?.id, body);
   }
+
+  @Get('me/working-hours')
+  async getWorkingHours(@Req() req: any) {
+    const userId = req.user?.id;
+    if (!userId) return [];
+    return this.usersService.getWorkingHours(userId);
+  }
 }
