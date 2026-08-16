@@ -10,6 +10,10 @@
     "turbo": "^2.0.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@nestjs/core", "unrs-resolver"]
-  }
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "unrs-resolver"
+    ]
+  },
+  "packageManager": "pnpm@10.29.3"
 }
