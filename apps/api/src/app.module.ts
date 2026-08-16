@@ -7,6 +7,8 @@ import { Service } from './entities/service.entity';
 import { Client } from './entities/client.entity';
 import { Appointment } from './entities/appointment.entity';
 import { UsersModule } from './users/users.module';
+import { ServicesModule } from './services/services.module';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { UsersModule } from './users/users.module';
       inject: [ConfigService],
     }),
     UsersModule,
+    ServicesModule,
+    ClientsModule,
   ],
 })
 export class AppModule {}
