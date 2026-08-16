@@ -14,3 +14,57 @@
 html {
   color-scheme: dark;
 }
+
+/* Theme tokens */
+:root {
+  --color-bg: #0A0A0A;
+  --color-surface: #111111;
+  --color-surface-2: #1A1A1A;
+  --color-border: #2A2A2A;
+  --color-accent: #39FF6A;
+  --color-text-primary: #F5F5F5;
+  --color-text-secondary: #A0A0A0;
+  --color-text-muted: #666666;
+}
+
+[data-theme="theme-obsidian"] {
+  --color-bg: #0A0A0A;
+  --color-surface: #111111;
+  --color-surface-2: #1A1A1A;
+  --color-border: #252525;
+}
+
+[data-theme="theme-forest"] {
+  --color-bg: #070D07;
+  --color-surface: #0D150D;
+  --color-surface-2: #132013;
+  --color-border: #1E321E;
+}
+
+[data-theme="theme-midnight"] {
+  --color-bg: #06060F;
+  --color-surface: #0D0D1A;
+  --color-surface-2: #141424;
+  --color-border: #1E1E35;
+}
+
+[data-theme="theme-mono"] {
+  --color-bg: #0C0C0C;
+  --color-surface: #181818;
+  --color-surface-2: #222222;
+  --color-border: #303030;
+}
+
+[data-theme="theme-slate"] {
+  --color-bg: #080C12;
+  --color-surface: #0E131C;
+  --color-surface-2: #151D2A;
+  --color-border: #1F2D40;
+}
+
+[data-theme="theme-carbon"] {
+  --color-bg: #0A0A0A;
+  --color-surface: #141414;
+  --color-surface-2: #1E1E1E;
+  --color-border: #2C2C2C;
+}
