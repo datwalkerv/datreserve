@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -8,12 +8,19 @@ import { DurationUnit } from '@datreserve/shared-types';
 
 export default function NewServicePage() {
   const router = useRouter();
+  const [currency, setCurrency] = useState('');
   const [form, setForm] = useState({
-    name: '', price: '', currency: '', durationValue: '60',
+    name: '', price: '', durationValue: '60',
     durationUnit: DurationUnit.MINUTES as string, description: '', notes: '', locationText: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('me').json<{ currency?: string }>()
+      .then(data => { if (data?.currency) setCurrency(data.currency); })
+      .catch(() => {});
+  }, []);
 
   function set(key: string, val: string) { setForm(f => ({ ...f, [key]: val })); }
 
@@ -22,7 +29,7 @@ export default function NewServicePage() {
     setLoading(true);
     setError('');
     try {
-      await api.post('services', { json: { ...form, price: parseFloat(form.price), durationValue: parseInt(form.durationValue) } });
+      await api.post('services', { json: { ...form, currency, price: parseFloat(form.price), durationValue: parseInt(form.durationValue) } });
       router.push('/admin/services');
     } catch {
       setError('Something went wrong.');
@@ -53,8 +60,9 @@ export default function NewServicePage() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm text-text-secondary">Currency</label>
-            <input value={form.currency} onChange={e => set('currency', e.target.value)} placeholder="USD"
-              className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent" />
+            <div className="flex h-[46px] items-center rounded-lg border border-border bg-surface px-4 text-sm text-text-primary">
+              {currency || <span className="text-text-muted">—</span>}
+            </div>
           </div>
         </div>
 
