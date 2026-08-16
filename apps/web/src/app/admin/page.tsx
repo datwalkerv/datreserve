@@ -182,7 +182,7 @@ export default function AdminPage() {
                   <div
                     key={h}
                     style={{ height: ROW_HEIGHT }}
-                    className={`border-b border-border ${isWorking ? '' : 'bg-surface/40'}`}
+                    className={`border-b border-border ${isWorking ? 'bg-background' : 'bg-surface-2'}`}
                   />
                 );
               })}
@@ -190,7 +190,7 @@ export default function AdminPage() {
               {/* Working hours bracket (if open) */}
               {isOpen && (
                 <div
-                  className="pointer-events-none absolute left-0 right-0 border-l-2 border-accent/40 bg-accent/5"
+                  className="pointer-events-none absolute left-0 right-0 border-l-2 border-accent/50"
                   style={{
                     top: ((startMin / 60 - HOUR_START) * ROW_HEIGHT),
                     height: ((endMin - startMin) / 60 * ROW_HEIGHT),
