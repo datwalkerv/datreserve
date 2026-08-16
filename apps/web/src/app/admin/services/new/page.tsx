@@ -37,13 +37,22 @@ export default function NewServicePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.name.trim()) { setError('Service name is required.'); return; }
+    const price = parseFloat(form.price);
+    if (isNaN(price) || price < 0) { setError('Enter a valid price.'); return; }
+    const durationValue = parseInt(form.durationValue);
+    if (isNaN(durationValue) || durationValue < 1) { setError('Enter a valid duration.'); return; }
     setLoading(true);
     setError('');
     try {
-      await api.post('services', { json: { ...form, currency, price: parseFloat(form.price), durationValue: parseInt(form.durationValue) } });
+      await api.post('services', { json: { ...form, currency, price, durationValue } });
       router.push('/admin/services');
-    } catch {
-      setError('Something went wrong.');
+    } catch (err: any) {
+      let msg = 'Something went wrong.';
+      if (err?.response) {
+        try { const b = await err.response.json(); msg = b?.message ?? msg; } catch {}
+      }
+      setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       setLoading(false);
     }
