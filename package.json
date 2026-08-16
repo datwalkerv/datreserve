@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "turbo": "^2.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@nestjs/core", "unrs-resolver"]
   }
 }

@@ -20,6 +20,11 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+._*
+
+# generated
+next-env.d.ts
+pnpm-lock.yaml
 
 # logs
 *.log
