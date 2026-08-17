@@ -22,7 +22,7 @@ import { UploadsModule } from './uploads/uploads.module';
         type: 'postgres',
         url: config.get('DATABASE_URL'),
         entities: [UserProfile, WorkingHours, Service, Client, Appointment],
-        synchronize: config.get('NODE_ENV') !== 'production',
+        synchronize: config.get('DATABASE_SYNC') === 'true' || config.get('NODE_ENV') !== 'production',
         logging: config.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
