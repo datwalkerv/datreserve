@@ -47,10 +47,12 @@ COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
+# Migration script runs outside Next.js so it can reach better-auth internals
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/migrate.mjs ./migrate.mjs
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# standalone output places the server at apps/web/server.js relative to the standalone root
-CMD ["node", "apps/web/server.js"]
+CMD ["sh", "-c", "node migrate.mjs && node apps/web/server.js"]
