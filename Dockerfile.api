@@ -15,8 +15,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared-types/package.json ./packages/shared-types/package.json
 COPY apps/api/package.json ./apps/api/package.json
 
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # ── builder ───────────────────────────────────────────────────────────────────
 FROM deps AS builder
@@ -42,8 +41,7 @@ COPY packages/shared-types/package.json ./packages/shared-types/package.json
 COPY packages/shared-types/src ./packages/shared-types/src
 COPY apps/api/package.json ./apps/api/package.json
 
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 
 # Copy compiled output from builder
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
