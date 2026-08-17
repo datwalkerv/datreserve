@@ -1,29 +1,69 @@
+import { readdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { createRequire } from 'module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const baDir = resolve(__dirname, 'node_modules/better-auth');
 
-// Bypass the exports map by using file:// URLs for internal better-auth modules
-const { getMigrations } = await import(
-  pathToFileURL(resolve(baDir, 'dist/db/get-migration.mjs')).href
+// pg lives under node_modules/.pnpm/pg@<version>/node_modules/pg in the standalone output
+const pnpmDir = resolve(__dirname, 'node_modules/.pnpm');
+const pgEntry = readdirSync(pnpmDir).find(d => /^pg@\d/.test(d));
+if (!pgEntry) throw new Error('Cannot find pg in ' + pnpmDir);
+const { default: pg } = await import(
+  pathToFileURL(resolve(pnpmDir, pgEntry, 'node_modules/pg/lib/index.js')).href
 );
-const { betterAuth } = await import(
-  pathToFileURL(resolve(baDir, 'dist/index.mjs')).href
-);
+const { Client } = pg;
 
-// Resolve pg via CJS require from better-auth's location (ba depends on pg)
-const { Pool } = createRequire(resolve(baDir, 'package.json'))('pg');
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+await client.connect();
 
-const auth = betterAuth({
-  database: new Pool({ connectionString: process.env.DATABASE_URL }),
-  emailAndPassword: { enabled: true },
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
-  trustedOrigins: [process.env.BETTER_AUTH_URL || 'http://localhost:3000'],
-});
+await client.query(`
+  CREATE TABLE IF NOT EXISTS "user" (
+    "id"             TEXT PRIMARY KEY,
+    "name"           TEXT NOT NULL,
+    "email"          TEXT NOT NULL UNIQUE,
+    "emailVerified"  BOOLEAN NOT NULL DEFAULT false,
+    "image"          TEXT,
+    "createdAt"      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt"      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
 
-const { runMigrations } = await getMigrations(auth.options);
-await runMigrations();
-console.log('[migrate] better-auth migrations complete');
+  CREATE TABLE IF NOT EXISTS "session" (
+    "id"          TEXT PRIMARY KEY,
+    "expiresAt"   TIMESTAMPTZ NOT NULL,
+    "token"       TEXT NOT NULL UNIQUE,
+    "createdAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "ipAddress"   TEXT,
+    "userAgent"   TEXT,
+    "userId"      TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS "account" (
+    "id"                     TEXT PRIMARY KEY,
+    "accountId"              TEXT NOT NULL,
+    "providerId"             TEXT NOT NULL,
+    "userId"                 TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+    "accessToken"            TEXT,
+    "refreshToken"           TEXT,
+    "idToken"                TEXT,
+    "accessTokenExpiresAt"   TIMESTAMPTZ,
+    "refreshTokenExpiresAt"  TIMESTAMPTZ,
+    "scope"                  TEXT,
+    "password"               TEXT,
+    "createdAt"              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt"              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS "verification" (
+    "id"          TEXT PRIMARY KEY,
+    "identifier"  TEXT NOT NULL,
+    "value"       TEXT NOT NULL,
+    "expiresAt"   TIMESTAMPTZ NOT NULL,
+    "createdAt"   TIMESTAMPTZ,
+    "updatedAt"   TIMESTAMPTZ
+  );
+`);
+
+await client.end();
+console.log('[migrate] better-auth tables ready');
 process.exit(0);
