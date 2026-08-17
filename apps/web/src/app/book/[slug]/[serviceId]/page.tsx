@@ -60,7 +60,7 @@ export default function BookingCalendarPage({ params }: { params: { slug: string
 
   function handleContinue() {
     if (!selectedSlot) return;
-    const qs = new URLSearchParams({ startAt: selectedSlot.startAt, endAt: selectedSlot.endAt }).toString();
+    const qs = new URLSearchParams({ startAt: selectedSlot.startAt, endAt: selectedSlot.endAt, tz: providerTZ }).toString();
     router.push(`/book/${params.slug}/${params.serviceId}/checkout?${qs}`);
   }
 

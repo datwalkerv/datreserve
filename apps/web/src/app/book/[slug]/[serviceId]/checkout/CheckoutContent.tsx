@@ -9,6 +9,7 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
   const searchParams = useSearchParams();
   const startAt = searchParams.get('startAt') || '';
   const endAt = searchParams.get('endAt') || '';
+  const providerTZ = searchParams.get('tz') || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const [step, setStep] = useState<'details' | 'overview' | 'confirmed'>('details');
   const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
@@ -22,6 +23,7 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
   const startDate = startAt ? new Date(startAt) : null;
   const displayTime = startDate?.toLocaleString([], {
     weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    timeZone: providerTZ,
   });
 
   function set(key: string, val: string) {
@@ -54,15 +56,22 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
   }
 
   function buildIcs(appt: any, start: Date, end: Date, serviceName: string, clientName: string) {
-    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const fmtLocal = (d: Date, tz: string) => {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+      }).formatToParts(d);
+      const get = (t: string) => parts.find(p => p.type === t)!.value;
+      return `${get('year')}${get('month')}${get('day')}T${get('hour').replace('24','00')}${get('minute')}${get('second')}`;
+    };
     const summary = `${serviceName} - ${clientName}`;
     return [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'BEGIN:VEVENT',
       `UID:${appt.icsUid || appt.id}@datreserve`,
-      `DTSTART:${fmt(start)}`,
-      `DTEND:${fmt(end)}`,
+      `DTSTART;TZID=${providerTZ}:${fmtLocal(start, providerTZ)}`,
+      `DTEND;TZID=${providerTZ}:${fmtLocal(end, providerTZ)}`,
       `SUMMARY:${summary}`,
       'END:VEVENT',
       'END:VCALENDAR',

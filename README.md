@@ -24,6 +24,14 @@ Let clients book your time — no back-and-forth, no friction.
 - **🔒 Secure Authentication**: Email/password auth via better-auth with cross-domain Bearer token strategy for Railway-hosted deployments.
 - **🧙 Guided Onboarding**: 4-stage setup wizard — niche selection from 20+ categories, country & currency, profile details, and working hours.
 
+## 📸 Screenshots
+
+<div align="center">
+  <img src="apps/web/public/screen1.png" width="48%" alt="Public booking page and time slot picker" />
+  &nbsp;
+  <img src="apps/web/public/screen2.png" width="48%" alt="Admin calendar dashboard" />
+</div>
+
 ## 🛠️ Technology Stack
 
 **Frontend**
