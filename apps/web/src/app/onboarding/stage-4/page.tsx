@@ -24,7 +24,7 @@ export default function OnboardingStage4() {
     setLoading(true);
     try {
       await api.patch('me/onboarding/stage4', { json: { theme: selected } });
-      document.cookie = 'onboarding_stage=complete; path=/';
+      document.cookie = 'onboarding_stage=complete; path=/; max-age=31536000; SameSite=Lax';
       router.push('/admin');
     } finally {
       setLoading(false);

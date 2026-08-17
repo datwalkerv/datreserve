@@ -18,6 +18,7 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: 'datreserve',
   description: 'Your booking page, simplified.',
+  icons: { icon: '/favicon.svg', shortcut: '/favicon.svg' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

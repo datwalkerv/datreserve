@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from '@/lib/auth-client';
+import { api } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +23,17 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-    router.push('/admin');
+    try {
+      const profile = await api.get('me').json<{ onboardingStage?: number }>();
+      if ((profile?.onboardingStage ?? 0) >= 4) {
+        document.cookie = 'onboarding_stage=complete; path=/; max-age=31536000; SameSite=Lax';
+        router.push('/admin');
+      } else {
+        router.push('/onboarding/stage-1');
+      }
+    } catch {
+      router.push('/admin');
+    }
   }
 
   return (
