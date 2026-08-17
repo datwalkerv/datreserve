@@ -5,9 +5,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type WorkingHours = {
-  weekday: number; // 0=Sun, 1=Mon … 6=Sat
+  weekday: number;
   isOpen: boolean;
-  startTime: string; // "HH:MM"
+  startTime: string;
   endTime: string;
 };
 
@@ -20,23 +20,51 @@ type Appointment = {
 };
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const HOUR_START = 7;
 const HOUR_END = 22;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
-const ROW_HEIGHT = 56; // px per hour
+const ROW_HEIGHT = 56;
 
-function startOfWeek(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay(); // 0=Sun
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
+// YYYY-MM-DD of a Date in a given timezone
+function dateStrInTZ(date: Date, tz: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(date);
 }
 
-function addDays(date: Date, n: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
+// Weekday (0=Sun) of a YYYY-MM-DD string in a given timezone
+function weekdayOfStr(dateStr: string, tz: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const noon = new Date(Date.UTC(y, m - 1, d, 12));
+  const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(noon);
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(name);
+}
+
+// Add n days to a YYYY-MM-DD string
+function addDaysToStr(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + n));
+  return date.toISOString().slice(0, 10);
+}
+
+// Sunday-anchored start of week for a YYYY-MM-DD string
+function startOfWeekStr(dateStr: string, tz: string): string {
+  return addDaysToStr(dateStr, -weekdayOfStr(dateStr, tz));
+}
+
+// Decimal hours (e.g. 11.5 for 11:30) of a UTC ISO string in a given timezone
+function hourInTZ(isoStr: string, tz: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date(isoStr));
+  const h = parseInt(parts.find(p => p.type === 'hour')!.value) % 24;
+  const m = parseInt(parts.find(p => p.type === 'minute')!.value);
+  return h + m / 60;
+}
+
+// Create a Date at noon UTC from a YYYY-MM-DD string (safe for .getDay()/.getDate() display)
+function noonUTC(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12));
 }
 
 function toMinutes(time: string): number {
@@ -51,51 +79,44 @@ function formatHour(h: number): string {
   return `${h - 12} PM`;
 }
 
-function apptTop(startAt: Date): number {
-  const h = startAt.getHours() + startAt.getMinutes() / 60;
-  return (h - HOUR_START) * ROW_HEIGHT;
-}
-
-function apptHeight(startAt: Date, endAt: Date): number {
-  const diffMin = (endAt.getTime() - startAt.getTime()) / 60000;
-  return (diffMin / 60) * ROW_HEIGHT;
-}
-
 export default function AdminPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [workingHours, setWorkingHours] = useState<WorkingHours[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const baseWeek = startOfWeek(today);
-  const weekStart = addDays(baseWeek, weekOffset * 7);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const [timezone, setTimezone] = useState('UTC');
 
   useEffect(() => {
+    api.get('me').json<{ timezone?: string }>()
+      .then(data => { if (data?.timezone) setTimezone(data.timezone); })
+      .catch(() => {});
     api.get('me/working-hours').json<WorkingHours[]>()
       .then(setWorkingHours)
       .catch(() => {});
   }, []);
 
+  const todayStr = dateStrInTZ(new Date(), timezone);
+  const weekStartStr = addDaysToStr(startOfWeekStr(todayStr, timezone), weekOffset * 7);
+  const dayStrs = Array.from({ length: 7 }, (_, i) => addDaysToStr(weekStartStr, i));
+
   useEffect(() => {
-    const from = weekStart.toISOString();
-    const to = addDays(weekStart, 7).toISOString();
+    // Fetch with a 1-day buffer on each side to handle any UTC offset
+    const from = addDaysToStr(weekStartStr, -1) + 'T00:00:00Z';
+    const to = addDaysToStr(weekStartStr, 8) + 'T00:00:00Z';
     api.get(`appointments?from=${from}&to=${to}`).json<Appointment[]>()
       .then(setAppointments)
       .catch(() => {});
-  }, [weekOffset]);
+  }, [weekOffset, timezone]);
 
   const hoursMap = new Map<number, WorkingHours>();
   for (const wh of workingHours) hoursMap.set(wh.weekday, wh);
 
-  const monthLabel = (() => {
-    const months = weekStart.getMonth() !== addDays(weekStart, 6).getMonth()
-      ? `${weekStart.toLocaleString('default', { month: 'long' })} – ${addDays(weekStart, 6).toLocaleString('default', { month: 'long' })} ${weekStart.getFullYear()}`
-      : `${weekStart.toLocaleString('default', { month: 'long' })} ${weekStart.getFullYear()}`;
-    return months;
-  })();
+  const weekEndStr = addDaysToStr(weekStartStr, 6);
+  const startMonth = parseInt(weekStartStr.slice(5, 7)) - 1;
+  const endMonth = parseInt(weekEndStr.slice(5, 7)) - 1;
+  const year = parseInt(weekStartStr.slice(0, 4));
+  const monthLabel = startMonth === endMonth
+    ? `${MONTHS[startMonth]} ${year}`
+    : `${MONTHS[startMonth]} – ${MONTHS[endMonth]} ${year}`;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -130,15 +151,16 @@ export default function AdminPage() {
       {/* Day headers */}
       <div className="flex shrink-0 border-b border-border">
         <div className="w-14 shrink-0" />
-        {days.map((day, i) => {
-          const isToday = day.getTime() === today.getTime();
+        {dayStrs.map((dayStr, i) => {
+          const d = noonUTC(dayStr);
+          const isToday = dayStr === todayStr;
           return (
             <div key={i} className="flex flex-1 flex-col items-center py-2">
-              <span className="text-xs text-text-muted">{DAY_LABELS[day.getDay()]}</span>
+              <span className="text-xs text-text-muted">{DAY_LABELS[d.getUTCDay()]}</span>
               <span className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${
                 isToday ? 'bg-accent text-black' : 'text-text-primary'
               }`}>
-                {day.getDate()}
+                {d.getUTCDate()}
               </span>
             </div>
           );
@@ -157,22 +179,18 @@ export default function AdminPage() {
         </div>
 
         {/* Day columns */}
-        {days.map((day, di) => {
-          const wh = hoursMap.get(day.getDay());
+        {dayStrs.map((dayStr, di) => {
+          const d = noonUTC(dayStr);
+          const wh = hoursMap.get(d.getUTCDay());
           const isOpen = wh?.isOpen ?? false;
           const startMin = isOpen ? toMinutes(wh!.startTime) : 0;
           const endMin = isOpen ? toMinutes(wh!.endTime) : 0;
 
-          // Appointments for this day
-          const dayAppts = appointments.filter(a => {
-            const d = new Date(a.startAt);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() === day.getTime();
-          });
+          const dayAppts = appointments.filter(a => dateStrInTZ(new Date(a.startAt), timezone) === dayStr);
 
           return (
             <div key={di} className="relative flex-1 border-l border-border">
-              {/* Hour rows — background */}
+              {/* Hour rows */}
               {Array.from({ length: TOTAL_HOURS }, (_, i) => {
                 const h = i + HOUR_START;
                 const rowStartMin = h * 60;
@@ -187,23 +205,23 @@ export default function AdminPage() {
                 );
               })}
 
-              {/* Working hours bracket (if open) */}
+              {/* Working hours bracket */}
               {isOpen && (
                 <div
                   className="pointer-events-none absolute left-0 right-0"
                   style={{
-                    top: ((startMin / 60 - HOUR_START) * ROW_HEIGHT),
-                    height: ((endMin - startMin) / 60 * ROW_HEIGHT),
+                    top: (startMin / 60 - HOUR_START) * ROW_HEIGHT,
+                    height: ((endMin - startMin) / 60) * ROW_HEIGHT,
                   }}
                 />
               )}
 
               {/* Appointment blocks */}
               {dayAppts.map(appt => {
-                const start = new Date(appt.startAt);
-                const end = new Date(appt.endAt);
-                const top = apptTop(start);
-                const height = Math.max(apptHeight(start, end), 22);
+                const startHour = hourInTZ(appt.startAt, timezone);
+                const endHour = hourInTZ(appt.endAt, timezone);
+                const top = (startHour - HOUR_START) * ROW_HEIGHT;
+                const height = Math.max((endHour - startHour) * ROW_HEIGHT, 22);
                 if (top < 0 || top > TOTAL_HOURS * ROW_HEIGHT) return null;
                 return (
                   <div
@@ -215,7 +233,7 @@ export default function AdminPage() {
                     <p className="truncate font-semibold text-accent">{appt.clientName}</p>
                     {height >= 40 && (
                       <p className="truncate text-accent/70">
-                        {new Date(appt.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(appt.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: timezone })}
                       </p>
                     )}
                   </div>
