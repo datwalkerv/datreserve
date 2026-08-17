@@ -4,6 +4,19 @@ import { Repository } from 'typeorm';
 import { UserProfile } from '../entities/user-profile.entity';
 import { WorkingHours } from '../entities/working-hours.entity';
 
+const COUNTRY_TZ: Record<string, string> = {
+  US: 'America/New_York', GB: 'Europe/London', DE: 'Europe/Berlin',
+  FR: 'Europe/Paris', HU: 'Europe/Budapest', RO: 'Europe/Bucharest',
+  PL: 'Europe/Warsaw', IT: 'Europe/Rome', ES: 'Europe/Madrid',
+  NL: 'Europe/Amsterdam', BE: 'Europe/Brussels', AT: 'Europe/Vienna',
+  CH: 'Europe/Zurich', SE: 'Europe/Stockholm', NO: 'Europe/Oslo',
+  DK: 'Europe/Copenhagen', FI: 'Europe/Helsinki', PT: 'Europe/Lisbon',
+  GR: 'Europe/Athens', CZ: 'Europe/Prague', SK: 'Europe/Bratislava',
+  HR: 'Europe/Zagreb', RS: 'Europe/Belgrade', UA: 'Europe/Kyiv',
+  TR: 'Europe/Istanbul', CA: 'America/Toronto', AU: 'Australia/Sydney',
+  NZ: 'Pacific/Auckland', AE: 'Asia/Dubai', SG: 'Asia/Singapore',
+};
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -36,7 +49,8 @@ export class UsersService {
     if (!profile) {
       profile = await this.createProfile(userId);
     }
-    Object.assign(profile, data, { onboardingStage: stage });
+    const tzFromCountry = (data as any).country ? COUNTRY_TZ[(data as any).country] : undefined;
+    Object.assign(profile, data, { onboardingStage: stage, ...(tzFromCountry ? { timezone: tzFromCountry } : {}) });
     return this.profileRepo.save(profile);
   }
 

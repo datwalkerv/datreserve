@@ -18,6 +18,7 @@ export default function BookingCalendarPage({ params }: { params: { slug: string
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<{ startAt: string; endAt: string }[]>([]);
+  const [providerTZ, setProviderTZ] = useState<string>('UTC');
   const [selectedSlot, setSelectedSlot] = useState<{ startAt: string; endAt: string } | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -29,7 +30,16 @@ export default function BookingCalendarPage({ params }: { params: { slug: string
     setSelectedSlot(null);
     fetch(`${apiBase}/public/${params.slug}/availability?serviceId=${params.serviceId}&date=${formatDate(selectedDate)}`)
       .then(r => r.json())
-      .then(data => setSlots(Array.isArray(data) ? data : []))
+      .then(data => {
+        if (data && Array.isArray(data.slots)) {
+          setSlots(data.slots);
+          if (data.timezone) setProviderTZ(data.timezone);
+        } else if (Array.isArray(data)) {
+          setSlots(data); // backwards compat
+        } else {
+          setSlots([]);
+        }
+      })
       .catch(() => setSlots([]))
       .finally(() => setLoadingSlots(false));
   }, [selectedDate]);
@@ -100,7 +110,7 @@ export default function BookingCalendarPage({ params }: { params: { slug: string
             {selectedDate && !loadingSlots && slots.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
                 {slots.map(slot => {
-                  const time = new Date(slot.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const time = new Date(slot.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: providerTZ });
                   const isSel = selectedSlot?.startAt === slot.startAt;
                   return (
                     <button key={slot.startAt} onClick={() => setSelectedSlot(slot)}

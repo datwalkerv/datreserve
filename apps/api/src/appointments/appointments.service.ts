@@ -1,4 +1,33 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+
+/** Convert a wall-clock time on a calendar date to a UTC Date, respecting the
+ *  given IANA timezone. Works without any external date library. */
+function localTimeToUTC(dateStr: string, hour: number, minute: number, timezone: string): Date {
+  // Build an approximate UTC timestamp treating the local time as UTC
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const approx = new Date(Date.UTC(y, mo - 1, d, hour, minute));
+
+  // Find what wall-clock time the approx UTC instant shows in the target tz
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(approx);
+  const localH = parseInt(parts.find(p => p.type === 'hour')!.value) % 24;
+  const localM = parseInt(parts.find(p => p.type === 'minute')!.value);
+
+  // Shift approx by the difference between desired and actual local time
+  const diffMs = ((hour * 60 + minute) - (localH * 60 + localM)) * 60_000;
+  return new Date(approx.getTime() - diffMs);
+}
+
+/** Get the day-of-week (0=Sun…6=Sat) for a YYYY-MM-DD date in a given timezone. */
+function weekdayInTZ(dateStr: string, timezone: string): number {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const noon = new Date(Date.UTC(y, mo - 1, d, 12, 0)); // noon UTC avoids DST edge cases
+  const dayName = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' })
+    .format(noon);
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(dayName);
+}
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Appointment } from '../entities/appointment.entity';
@@ -42,7 +71,8 @@ export class AppointmentsService {
     if (!service) throw new NotFoundException('Service not found');
 
     const requestedDate = new Date(date);
-    const weekday = requestedDate.getDay();
+    const tz = profile.timezone || 'UTC';
+    const weekday = weekdayInTZ(date, tz);
 
     const hours = await this.hoursRepo.findOne({ where: { userId: profile.userId, weekday } });
     if (!hours || !hours.isOpen) return [];
@@ -53,13 +83,11 @@ export class AppointmentsService {
 
     const [sh, sm] = hours.startTime.split(':').map(Number);
     const [eh, em] = hours.endTime.split(':').map(Number);
-    const dayStart = new Date(requestedDate);
-    dayStart.setHours(sh, sm, 0, 0);
-    const dayEnd = new Date(requestedDate);
-    dayEnd.setHours(eh, em, 0, 0);
+    const dayStart = localTimeToUTC(date, sh, sm, tz);
+    const dayEnd = localTimeToUTC(date, eh, em, tz);
 
-    const dayEndBoundary = new Date(requestedDate);
-    dayEndBoundary.setHours(23, 59, 59, 999);
+    const dayEndBoundary = localTimeToUTC(date, 23, 59, tz);
+    dayEndBoundary.setUTCSeconds(59, 999);
     const existing = await this.apptRepo.find({
       where: {
         userId: profile.userId,
@@ -88,7 +116,7 @@ export class AppointmentsService {
       cursor = new Date(cursor.getTime() + hours.slotIntervalMinutes * 60 * 1000);
     }
 
-    return slots;
+    return { slots, timezone: tz };
   }
 
   async createPublicBooking(slug: string, data: {
