@@ -17,7 +17,7 @@ function localTimeToUTC(dateStr: string, hour: number, minute: number, timezone:
 
   // Shift approx by the difference between desired and actual local time
   const diffMs = ((hour * 60 + minute) - (localH * 60 + localM)) * 60_000;
-  return new Date(approx.getTime() - diffMs);
+  return new Date(approx.getTime() + diffMs);
 }
 
 /** Get the day-of-week (0=Sun…6=Sat) for a YYYY-MM-DD date in a given timezone. */
