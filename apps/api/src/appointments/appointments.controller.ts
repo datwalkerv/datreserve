@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Param, Req, Query } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { AppointmentStatus } from '@datreserve/shared-types';
+import { CreatePublicBookingDto } from './dto/create-public-booking.dto';
 
 @Controller()
 export class AppointmentsController {
@@ -31,7 +32,7 @@ export class AppointmentsController {
   }
 
   @Post('public/:slug/book')
-  createBooking(@Param('slug') slug: string, @Body() body: any) {
+  createBooking(@Param('slug') slug: string, @Body() body: CreatePublicBookingDto) {
     return this.svc.createPublicBooking(slug, body);
   }
 }

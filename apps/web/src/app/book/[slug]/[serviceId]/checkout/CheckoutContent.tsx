@@ -12,6 +12,7 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
 
   const [step, setStep] = useState<'details' | 'overview' | 'confirmed'>('details');
   const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [icsUrl, setIcsUrl] = useState('');
@@ -25,6 +26,31 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
 
   function set(key: string, val: string) {
     setForm(f => ({ ...f, [key]: val }));
+    setErrors(e => ({ ...e, [key]: '' }));
+  }
+
+  function validate() {
+    const errs: Record<string, string> = {};
+    const name = form.name.trim();
+    if (!name) errs.name = 'Name is required.';
+    else if (name.length < 2) errs.name = 'Name must be at least 2 characters.';
+    else if (name.length > 100) errs.name = 'Name must be 100 characters or fewer.';
+
+    const email = form.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Enter a valid email address.';
+
+    const phone = form.phone.trim();
+    if (phone && !/^[+\d\s\-().]{7,30}$/.test(phone)) errs.phone = 'Enter a valid phone number.';
+
+    if (form.notes.length > 500) errs.notes = 'Notes must be 500 characters or fewer.';
+
+    return errs;
+  }
+
+  function goToOverview() {
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setStep('overview');
   }
 
   function buildIcs(appt: any, start: Date, end: Date, serviceName: string, clientName: string) {
@@ -55,10 +81,10 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
           body: JSON.stringify({
             serviceId: params.serviceId,
             startAt,
-            clientName: form.name,
-            clientEmail: form.email,
-            clientPhone: form.phone,
-            clientNotes: form.notes,
+            clientName: form.name.trim(),
+            clientEmail: form.email.trim() || undefined,
+            clientPhone: form.phone.trim() || undefined,
+            clientNotes: form.notes.trim() || undefined,
           }),
         }),
       ]);
@@ -67,7 +93,7 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
       const profileData = profileRes.ok ? await profileRes.json() : null;
       const service = profileData?.services?.find((s: any) => s.id === params.serviceId);
       const serviceName = service?.name || 'Appointment';
-      const ics = buildIcs(appt, startDate!, new Date(endAt), serviceName, form.name);
+      const ics = buildIcs(appt, startDate!, new Date(endAt), serviceName, form.name.trim());
       const blob = new Blob([ics], { type: 'text/calendar' });
       setIcsUrl(URL.createObjectURL(blob));
       setStep('confirmed');
@@ -117,18 +143,18 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
             </div>
             <div className="flex justify-between">
               <span className="text-text-muted">Name</span>
-              <span className="text-text-primary">{form.name}</span>
+              <span className="text-text-primary">{form.name.trim()}</span>
             </div>
-            {form.email && (
+            {form.email.trim() && (
               <div className="flex justify-between">
                 <span className="text-text-muted">Email</span>
-                <span className="text-text-primary">{form.email}</span>
+                <span className="text-text-primary">{form.email.trim()}</span>
               </div>
             )}
-            {form.phone && (
+            {form.phone.trim() && (
               <div className="flex justify-between">
                 <span className="text-text-muted">Phone</span>
-                <span className="text-text-primary">{form.phone}</span>
+                <span className="text-text-primary">{form.phone.trim()}</span>
               </div>
             )}
           </div>
@@ -159,27 +185,54 @@ export default function CheckoutContent({ params }: { params: { slug: string; se
         <p className="mb-6 text-sm text-text-secondary">{displayTime}</p>
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm text-text-secondary">Name</label>
-            <input value={form.name} onChange={e => set('name', e.target.value)} required
-              className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent" />
+            <label className="mb-1.5 block text-sm text-text-secondary">Name <span className="text-red-400">*</span></label>
+            <input
+              value={form.name}
+              onChange={e => set('name', e.target.value)}
+              maxLength={100}
+              className={`w-full rounded-lg border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent ${errors.name ? 'border-red-400' : 'border-border'}`}
+            />
+            {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-sm text-text-secondary">Email</label>
-            <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent" />
+            <input
+              type="email"
+              value={form.email}
+              onChange={e => set('email', e.target.value)}
+              maxLength={254}
+              className={`w-full rounded-lg border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent ${errors.email ? 'border-red-400' : 'border-border'}`}
+            />
+            {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-sm text-text-secondary">Phone</label>
-            <input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent" />
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={e => set('phone', e.target.value)}
+              maxLength={30}
+              className={`w-full rounded-lg border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent ${errors.phone ? 'border-red-400' : 'border-border'}`}
+            />
+            {errors.phone && <p className="mt-1 text-xs text-red-400">{errors.phone}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-sm text-text-secondary">Notes (optional)</label>
-            <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={3}
-              className="w-full resize-none rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent" />
+            <textarea
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+              rows={3}
+              maxLength={500}
+              className={`w-full resize-none rounded-lg border bg-surface px-4 py-3 text-sm text-text-primary outline-none focus:border-accent ${errors.notes ? 'border-red-400' : 'border-border'}`}
+            />
+            <div className="mt-1 flex justify-between">
+              {errors.notes ? <p className="text-xs text-red-400">{errors.notes}</p> : <span />}
+              <p className="text-xs text-text-muted">{form.notes.length}/500</p>
+            </div>
           </div>
-          <button onClick={() => { if (form.name) setStep('overview'); }} disabled={!form.name}
-            className="w-full rounded-lg bg-accent py-3 text-sm font-semibold text-black hover:bg-accent-hover disabled:opacity-40">
+          <button
+            onClick={goToOverview}
+            className="w-full rounded-lg bg-accent py-3 text-sm font-semibold text-black hover:bg-accent-hover">
             Continue
           </button>
         </div>
