@@ -1,9 +1,15 @@
-import { Controller, Get, Patch, Put, Body, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Put, Body, Req, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from './users.service';
 
 @Controller()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  private requireUser(req: any): string {
+    const id = req.user?.id;
+    if (!id) throw new UnauthorizedException();
+    return id;
+  }
 
   @Get('me')
   async getMe(@Req() req: any) {
@@ -14,27 +20,27 @@ export class UsersController {
 
   @Patch('me/onboarding/stage1')
   async stage1(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateOnboardingStage(req.user?.id, 1, body);
+    return this.usersService.updateOnboardingStage(this.requireUser(req), 1, body);
   }
 
   @Patch('me/onboarding/stage2')
   async stage2(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateOnboardingStage(req.user?.id, 2, body);
+    return this.usersService.updateOnboardingStage(this.requireUser(req), 2, body);
   }
 
   @Patch('me/onboarding/stage3')
   async stage3(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateOnboardingStage(req.user?.id, 3, body);
+    return this.usersService.updateOnboardingStage(this.requireUser(req), 3, body);
   }
 
   @Patch('me/onboarding/stage4')
   async stage4(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateOnboardingStage(req.user?.id, 4, body);
+    return this.usersService.updateOnboardingStage(this.requireUser(req), 4, body);
   }
 
   @Patch('settings/profile')
   async updateProfile(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateProfile(req.user?.id, body);
+    return this.usersService.updateProfile(this.requireUser(req), body);
   }
 
   @Get('me/working-hours')
