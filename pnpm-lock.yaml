@@ -142,7 +142,11 @@ importers:
 
   packages/config: {}
 
-  packages/shared-types: {}
+  packages/shared-types:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
 
 packages:
 
