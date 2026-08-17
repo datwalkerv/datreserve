@@ -63,7 +63,7 @@ export class AppointmentsService {
     return this.apptRepo.save(appt);
   }
 
-  async getAvailability(slug: string, serviceId: string, date: string): Promise<{ startAt: string; endAt: string }[]> {
+  async getAvailability(slug: string, serviceId: string, date: string): Promise<{ slots: { startAt: string; endAt: string }[]; timezone: string }> {
     const profile = await this.profileRepo.findOne({ where: { slug } });
     if (!profile) throw new NotFoundException('Provider not found');
 
@@ -75,7 +75,7 @@ export class AppointmentsService {
     const weekday = weekdayInTZ(date, tz);
 
     const hours = await this.hoursRepo.findOne({ where: { userId: profile.userId, weekday } });
-    if (!hours || !hours.isOpen) return [];
+    if (!hours || !hours.isOpen) return { slots: [], timezone: tz };
 
     const durationMinutes = service.durationUnit === 'hours'
       ? service.durationValue * 60
