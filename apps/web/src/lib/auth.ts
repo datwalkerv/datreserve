@@ -17,6 +17,11 @@ export const auth = betterAuth({
     defaultCookieAttributes: isProd
       ? { sameSite: 'none', secure: true }
       : {},
+    // Railway terminates TLS via a proxy and forwards the real client IP here.
+    ipAddress: {
+      ipAddressHeaders: ['x-forwarded-for'],
+      trustedProxies: ['0.0.0.0/0'],
+    },
   },
 });
 
