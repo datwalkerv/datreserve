@@ -84,6 +84,12 @@ export default function AdminPage() {
   const [workingHours, setWorkingHours] = useState<WorkingHours[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [timezone, setTimezone] = useState('UTC');
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     api.get('me').json<{ timezone?: string }>()
@@ -215,6 +221,19 @@ export default function AdminPage() {
                   }}
                 />
               )}
+
+              {/* Current time line — today's column only */}
+              {dayStr === todayStr && (() => {
+                const nowHour = hourInTZ(now.toISOString(), timezone);
+                const top = (nowHour - HOUR_START) * ROW_HEIGHT;
+                if (top < 0 || top > TOTAL_HOURS * ROW_HEIGHT) return null;
+                return (
+                  <div className="pointer-events-none absolute left-0 right-0 z-10" style={{ top }}>
+                    <div className="absolute -left-1 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white" />
+                    <div className="h-px bg-white opacity-80" />
+                  </div>
+                );
+              })()}
 
               {/* Appointment blocks */}
               {dayAppts.map(appt => {

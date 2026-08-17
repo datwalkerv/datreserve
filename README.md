@@ -27,9 +27,9 @@ Let clients book your time — no back-and-forth, no friction.
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="apps/web/public/screen1.png" width="48%" alt="Public booking page and time slot picker" />
+  <img src="apps/web/public/screen1.png" width="98%" alt="Public booking page and time slot picker" />
   &nbsp;
-  <img src="apps/web/public/screen2.png" width="48%" alt="Admin calendar dashboard" />
+  <img src="apps/web/public/screen2.png" width="98%" alt="Admin calendar dashboard" />
 </div>
 
 ## 🛠️ Technology Stack
