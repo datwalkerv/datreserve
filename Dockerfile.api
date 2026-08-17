@@ -6,45 +6,40 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
 
-# ── deps ──────────────────────────────────────────────────────────────────────
+# ── deps (all deps, needed to compile) ───────────────────────────────────────
 FROM base AS deps
 WORKDIR /app
-
-# Copy only manifests first to maximise layer cache hits
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared-types/package.json ./packages/shared-types/package.json
 COPY apps/api/package.json ./apps/api/package.json
-
 RUN pnpm install --frozen-lockfile
+
+# ── prod-deps (production only, no devDependencies) ───────────────────────────
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared-types/package.json ./packages/shared-types/package.json
+COPY apps/api/package.json ./apps/api/package.json
+RUN pnpm install --frozen-lockfile --prod
 
 # ── builder ───────────────────────────────────────────────────────────────────
 FROM deps AS builder
 WORKDIR /app
-
 COPY . .
-
-# Build shared-types source (it has no build script, so compile manually)
 RUN pnpm --filter @datreserve/api build
 
 # ── runner ────────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
-
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install production deps only
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/shared-types/package.json ./packages/shared-types/package.json
-COPY packages/shared-types/src ./packages/shared-types/src
-COPY apps/api/package.json ./apps/api/package.json
+# Pull node_modules from prod-deps — no COPY from build context needed
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/apps/api/node_modules ./apps/api/node_modules
 
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy compiled output from builder
+# Pull compiled output from builder
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 
 WORKDIR /app/apps/api
 EXPOSE 3001
